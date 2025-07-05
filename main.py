@@ -28,7 +28,7 @@ elif os.name == "nt":
     plusICO = Image.open("Assets\\img\\plus.png")
     minusICO = Image.open("Assets\\img\\minus.png")
     minusplusICO = Image.open("Assets\\img\\minusplus.png")
-    searchStockICO = Image.open("Assets\\img\\searchsMatock.png")
+    searchStockICO = Image.open("Assets\\img\\searchsstock.png")
     shopICO = Image.open("Assets\\img\\shopping.png")
     permICO = Image.open("Assets\\img\\perm.png")
     cvICO = Image.open("Assets\\img\\usertable.png")
