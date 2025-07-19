@@ -3,6 +3,7 @@ import tkinter as tk
 from customtkinter import CTk
 from PIL import Image, ImageTk
 from CTkListbox import *
+import time
 import json
 import os
 
@@ -21,6 +22,8 @@ if os.name == "posix":
     profileICO = Image.open("Assets/img/profile.png")
     userICO = Image.open("Assets/img/user.png")
     refreshICO = Image.open("Assets/img/refresh.png")
+    entryICO = Image.open("Assets/img/enter.png")
+    clearICO = Image.open("Assets/img/clear.png")
 elif os.name == "nt":
     homeICO = Image.open("Assets\\img\\home.png")
     financeICO = Image.open("Assets\\img\\finance.png")
@@ -28,7 +31,7 @@ elif os.name == "nt":
     plusICO = Image.open("Assets\\img\\plus.png")
     minusICO = Image.open("Assets\\img\\minus.png")
     minusplusICO = Image.open("Assets\\img\\minusplus.png")
-    searchStockICO = Image.open("Assets\\img\\searchsstock.png")
+    searchStockICO = Image.open("Assets\\img\\searchstock.png")
     shopICO = Image.open("Assets\\img\\shopping.png")
     permICO = Image.open("Assets\\img\\perm.png")
     cvICO = Image.open("Assets\\img\\usertable.png")
@@ -36,6 +39,8 @@ elif os.name == "nt":
     profileICO = Image.open("Assets\\img\\profile.png")
     userICO = Image.open("Assets\\img\\user.png")
     refreshICO = Image.open("Assets\\img\\refresh.png")
+    entryICO = Image.open("Assets\\img\\enter.png")
+    clearICO = Image.open("Assets\\img\\clear.png")
 
 class MarketUi:
     def __init__(self):
@@ -129,6 +134,7 @@ class MarketUi:
     def LoadData(self,jsonP):
         with open(jsonP) as f:
             self.JsonData = json.load(f)
+
 
     def perm_num_to_str(self, Perm):
         # Perm sayısal ise harfe çevirir
@@ -254,7 +260,7 @@ class MarketUi:
             self.RefListBox()
 
     def RefListBox(self):
-        print("ref")
+        print("[OK] Refresh User List")
         try:
             self.listbox.delete(0, "end")
             if os.name == "posix":
@@ -555,6 +561,267 @@ class MarketUi:
         )
         dropCdown2.place(x=355,y=145)    
 
+    def EVENT_LIST_TO_LIST(self,selectedIndex):
+        self.AddedItemslistbox.insert("end", selectedIndex)
+        Path = "Assets/data/Payment.json" if os.name == "posix" else "Assets\\data\\Payment.json"
+
+        if not os.path.exists(Path) or os.stat(Path).st_size == 0:
+            with open(Path, "w") as f:
+                json.dump({}, f)
+        with open(Path, "r") as f:
+            try:
+                jsdata = json.load(f)
+            except json.JSONDecodeError:
+                jsdata = {}
+
+
+        if selectedIndex in jsdata:
+            jsdata[selectedIndex]["Count"] += 1
+        else:
+            jsdata[selectedIndex] = {"Count": 1}
+
+        with open(Path, "w") as f:
+            json.dump(jsdata, f, indent=4)
+
+        self.EVENT_LOADBILLS()
+
+
+    def EVENT_LOADBILLS(self):
+        try:
+            self.BillListbox.delete(0, "end")
+            path_payment = "Assets/data/Payment.json" if os.name == "posix" else "Assets\\data\\Payment.json"
+            path_items = "Assets/data/Item.json" if os.name == "posix" else "Assets\\data\\Item.json"
+
+            with open(path_payment, "r") as f:
+                payment_data = json.load(f)
+
+            with open(path_items, "r") as f:
+                item_data = json.load(f)
+            self.BillListbox.delete(0, "end")
+            for product_name, values in payment_data.items():
+                count = values.get("Count", 0)
+
+                product_info = item_data.get(product_name)
+                if product_info:
+                    price = product_info.get("Price", 0)
+                    total_price = count * price
+                    self.BillListbox.insert("end", f"{product_name} || {total_price}₺")
+                else:
+                    self.BillListbox.insert("end", f"{product_name} || Not Found Item")
+
+        except Exception as e:
+            pass
+
+
+    def EVENT_CLEARLIST(self):
+        Path = "Assets/data/Payment.json" if os.name == "posix" else "Assets\\data\\Payment.json"
+        with open(Path, "w") as f:
+            json.dump({},f)
+        print("[OK] Refresh Item List")
+        try:
+            self.AddedItemslistbox.delete(0, "end")
+            if os.name == "posix":
+                pathJ = "Assets/data/Payment.json"
+            elif os.name == "nt":
+                pathJ = "Assets\\data\\Payment.json"
+
+            with open(pathJ, "r") as f:
+                datas = json.load(f)
+                for key in datas.keys():
+                    self.AddedItemslistbox.insert("end", key)
+        except Exception as e:
+            self.AddedItemslistbox.insert("end", f"Error: {e}")
+
+        self.EVENT_LOADBILLS()
+
+
+    def EVENT_GETITEM(self):
+        path_itemid = "Assets/data/ItemID.json" if os.name == "posix" else "Assets\\data\\ItemID.json"
+        path_payment = "Assets/data/Payment.json" if os.name == "posix" else "Assets\\data\\Payment.json"
+
+        input_id = self.LENTRY.get().strip()
+        with open(path_itemid, "r") as f:
+            items = json.load(f)
+
+        if input_id in items:
+            item_name = items[input_id]["Name"]
+            self.AddedItemslistbox.insert("end", item_name)
+
+            if not os.path.exists(path_payment) or os.stat(path_payment).st_size == 0:
+                with open(path_payment, "w") as f:
+                    json.dump({}, f)
+
+            with open(path_payment, "r") as f:
+                try:
+                    jsdata = json.load(f)
+                except json.JSONDecodeError:
+                    jsdata = {}
+
+            if item_name in jsdata:
+                jsdata[item_name]["Count"] += 1
+            else:
+                jsdata[item_name] = {"Count": 1}
+
+            with open(path_payment, "w") as f:
+                json.dump(jsdata, f, indent=4)
+
+            self.EVENT_LOADBILLS()
+        else:
+            print(f"[ERR] Error :  Not Found Item On This Id --> {input_id}")
+
+
+    def EVENT_DELETEITEM(self,selectedSTRINDEX):
+        path_payment = "Assets/data/Payment.json" if os.name == "posix" else "Assets\\data\\Payment.json"
+
+        with open(path_payment, "r") as f:
+            itemload = json.load(f)
+
+        if selectedSTRINDEX in itemload:
+            if itemload[selectedSTRINDEX]["Count"] > 1:
+                itemload[selectedSTRINDEX]["Count"] -= 1
+            else:
+                del itemload[selectedSTRINDEX]
+            with open(path_payment, "w") as f:
+                json.dump(itemload, f, indent=4)
+
+            self.AddedItemslistbox.delete(self.AddedItemslistbox.curselection())
+
+        self.EVENT_LOADBILLS()
+            
+
+
+        
+
+    def EVENT_LOADSHOP(self):                                                                                     
+        print("[-] LOADING SHOP PAGE")
+        self.ListPayment = 0
+        self.ShopUiFrame.tkraise()
+        self.ShopUiFrame.place(x=205,y=0)
+        Path = "Assets/data/Payment.json" if os.name == "posix" else "Assets\\data\\Payment.json"
+        with open(Path, "w") as f:
+            json.dump({},f)
+
+        ItemIDFrame = customtkinter.CTkFrame(self.ShopUiFrame,
+                                             width=325,
+                                             height=125,
+                                             fg_color="#e1dcdc",
+                                             corner_radius=5,
+                                             border_width=1,
+                                             border_color="#bfbcbc")
+        ItemIDFrame.place(x=50,y=100)
+
+
+        self.FastItemlistbox = CTkListbox(self.ShopUiFrame, width=250, height=325, border_width=1, font=("Default", 20,"bold"),border_color="#888888",fg_color="#EDEDED",command=self.EVENT_LIST_TO_LIST,text_color="#000000",hover_color="#e3e3e3")
+        self.FastItemlistbox.place(x=450,y=100)
+
+        self.AddedItemslistbox = CTkListbox(self.ShopUiFrame, width=300, height=250, border_width=1, font=("Default", 20,"bold"),border_color="#888888",fg_color="#EDEDED",command=self.EVENT_DELETEITEM,text_color="#000000",hover_color="#e3e3e3")
+        self.AddedItemslistbox.place(x=50,y=250)
+
+        self.BillListbox = CTkListbox(self.ShopUiFrame, width=250, height=125, border_width=1, font=("Default", 20,"bold"),border_color="#888888",fg_color="#EDEDED",text_color="#000000",hover_color="#e3e3e3")
+        self.BillListbox.place(x=450,y=450) 
+
+
+        try:
+            path_payment = "Assets/data/Payment.json" if os.name == "posix" else "Assets\\data\\Payment.json"
+            path_items = "Assets/data/Item.json" if os.name == "posix" else "Assets\\data\\Item.json"
+
+            with open(path_payment, "r") as f:
+                payment_data = json.load(f)
+
+            with open(path_items, "r") as f:
+                item_data = json.load(f)
+            self.BillListbox.delete(0, "end")
+            for product_name, values in payment_data.items():
+                count = values.get("Count", 0)
+
+                product_info = item_data.get(product_name)
+                if product_info:
+                    price = product_info.get("Price", 0)
+                    total_price = count * price
+                    self.BillListbox.insert("end", f"{product_name} || {total_price}₺")
+                else:
+                    self.BillListbox.insert("end", f"{product_name} || Ürün Bulunamadı")
+
+        except Exception as e:
+            print(f"[ERR] Error : {e}")
+
+        try:
+            if os.name == "posix":
+                pathJ = "Assets/data/FastItem.json"
+            elif os.name == "nt":
+                pathJ = "Assets\\data\\FastItem.json"
+            with open(pathJ, "r") as f:
+                datas = json.load(f)
+                for key in datas.keys():
+                    self.FastItemlistbox.insert("end", key)
+        except Exception as e:
+            self.FastItemlistbox.insert("end", f"Error: {e}")
+
+        UserPageTitle = customtkinter.CTkLabel(self.ShopUiFrame,
+                                               text="Shop Page",
+                                               text_color="#000000",
+                                               font=("Helvetica", 20, "bold"))
+        UserPageTitle.place(x=300,y=20)
+
+        LENTRYLabel = customtkinter.CTkLabel(ItemIDFrame,
+                                        text="Item ID",
+                                        text_color="#000000",
+                                        font=("Default", 15, "bold"))
+        
+        LENTRYLabel.place(x=15,y=15)
+
+        self.LENTRY = customtkinter.CTkEntry(ItemIDFrame,
+                                        placeholder_text="Enter Item ID",
+                                        placeholder_text_color="#A1A1A1",
+                                        width=250,
+                                        height=40,
+                                        fg_color="#EEEEEE",
+                                        text_color="#000000")
+        
+        self.LENTRY.place(x=10,y=40)
+
+        LENTRYButton = customtkinter.CTkButton(ItemIDFrame,
+                                               text="",
+                                               font=("Default", 15,"bold"),
+                                               image=customtkinter.CTkImage(dark_image=entryICO,size=(32,32)),
+                                               width=25,
+                                               height=40,
+                                               fg_color="#0EDB1C",
+                                               hover_color="#0EC41A",
+                                               command=self.EVENT_GETITEM)
+        LENTRYButton.place(x=270,y=40)
+
+
+        LENTRYsButton = customtkinter.CTkButton(self.ShopUiFrame,
+                                               text="",
+                                               font=("Default", 15,"bold"),
+                                               image=customtkinter.CTkImage(dark_image=clearICO,size=(32,32)),
+                                               width=275,
+                                               height=40,
+                                               fg_color="#0EDB1C",
+                                               hover_color="#0EC41A",
+                                               command=self.EVENT_CLEARLIST)
+        LENTRYsButton.place(x=50,y=520)
+
+        LENTRYssButton = customtkinter.CTkButton(self.ShopUiFrame,
+                                               text="",
+                                               font=("Default", 15,"bold"),
+                                               image=customtkinter.CTkImage(dark_image=refreshICO,size=(32,32)),
+                                               width=50,
+                                               height=40,
+                                               fg_color="#0EDB1C",
+                                               hover_color="#0EC41A",
+                                               command=self.EVENT_LOADBILLS)
+        LENTRYssButton.place(x=325,y=520)
+
+
+        print("[OK] LOADED SHOP PAGE")
+
+
+    def EVENT_LOADHOME(self):
+        self.HomUiFrame.tkraise()
+        self.HomUiFrame.place(x=205,y=5)
+
     def LoadMainUi(self, EnteredPass, EnteredName):
         print(f"""
 [!] ENTERED NAME : {EnteredName}
@@ -592,6 +859,12 @@ class MarketUi:
         self.MainUi.geometry("960x600")
         self.MainUi.resizable(False,False)
 
+        self.HomUiFrame = customtkinter.CTkFrame(self.MainUi, width=750,height=600, fg_color="#FFFFFF")
+        self.ShopUiFrame = customtkinter.CTkFrame(self.MainUi, width=750,height=600, fg_color="#FFFFFF")
+
+        self.HomUiFrame.place(x=205,y=0)
+        self.HomUiFrame.tkraise()
+
         # HOME COMPONENTS
         if os.name == "posix":
             self.LoadData(jsonP="Assets/data/UserManagement.json")
@@ -599,11 +872,11 @@ class MarketUi:
             self.LoadData(jsonP="Assets\\data\\UserManagement.json")
 
 
-        loadedUserINFrame = customtkinter.CTkFrame(self.MainUi,fg_color="#EDEDED",width=425,height=150,border_width=1,border_color="#bcb8b8")
-        loadedUserINFrame.place(x=220,y=125)
+        loadedUserINFrame = customtkinter.CTkFrame(self.HomUiFrame,fg_color="#EDEDED",width=425,height=150,border_width=1,border_color="#bcb8b8")
+        loadedUserINFrame.place(x=5,y=125)
 
-        self.DocsFrame = customtkinter.CTkScrollableFrame(self.MainUi,fg_color="#EDEDED",width=400,height=150,border_width=1,border_color="#bcb8b8")
-        self.DocsFrame.place(x=220,y=300)
+        self.DocsFrame = customtkinter.CTkScrollableFrame(self.HomUiFrame,fg_color="#EDEDED",width=400,height=150,border_width=1,border_color="#bcb8b8")
+        self.DocsFrame.place(x=5,y=300)
         self.DocsFrame.bind_all("<MouseWheel>", self.scrollEnter)  # Windows/macOS
         self.DocsFrame.bind_all("<Button-4>", self.scrollEnter)    # Linux (scroll up)
         self.DocsFrame.bind_all("<Button-5>", self.scrollEnter)    # Linux (scroll down)
@@ -639,11 +912,10 @@ class MarketUi:
                                                text_color="#000000",
                                                font=("Default",18,"bold"))
         UserPermLabel.place(x=190,y=45)
-
+         
         for level, color, desc in self.perms:
             frame = customtkinter.CTkFrame(self.DocsFrame, fg_color=color, corner_radius=6)
             frame.pack(fill="x", padx=5, pady=3)
-
             label = customtkinter.CTkLabel(frame,
                                 text=f"{level} : {desc}",
                                 anchor="w",
@@ -651,11 +923,11 @@ class MarketUi:
                                 text_color="#000000")
             label.pack(padx=10, pady=4, fill="x")
 
-        self.listbox = CTkListbox(self.MainUi, width=250, height=300, border_width=1, font=("Default", 20,"bold"),border_color="#888888",fg_color="#EDEDED",command=self.LoadUserHomeUi,text_color="#000000",hover_color="#e3e3e3")
-        self.listbox.place(x=660,y=125)
+        self.listbox = CTkListbox(self.HomUiFrame, width=250, height=300, border_width=1, font=("Default", 20,"bold"),border_color="#888888",fg_color="#EDEDED",command=self.LoadUserHomeUi,text_color="#000000",hover_color="#e3e3e3")
+        self.listbox.place(x=450,y=125)
 
         try:
-
+   
             if os.name == "posix":
                 pathJ = "Assets/data/UserManagement.json"
             elif os.name == "nt":
@@ -669,7 +941,7 @@ class MarketUi:
             self.listbox.insert("end", f"Error: {e}")
 
 
-        HomeUserAdd = customtkinter.CTkButton(self.MainUi,
+        HomeUserAdd = customtkinter.CTkButton(self.HomUiFrame,
                                                     text="New User",
                                                     text_color="#000000",
                                                     font=("Helvetica", 15, "bold"),
@@ -684,9 +956,9 @@ class MarketUi:
                                                     command=self.LoadCreateHomeUi
                                                     )
 
-        HomeUserAdd.place(x=660,y=450)
+        HomeUserAdd.place(x=450,y=450)
 
-        HomeListRef = customtkinter.CTkButton(self.MainUi,
+        HomeListRef = customtkinter.CTkButton(self.HomUiFrame,
                                                     text="",
                                                     text_color="#000000",
                                                     font=("Helvetica", 15, "bold"),
@@ -699,17 +971,16 @@ class MarketUi:
                                                     command=self.RefListBox
                                                     )
 
-        HomeListRef.place(x=870,y=450)
+        HomeListRef.place(x=670,y=450)
 
-        MainPageTitle = customtkinter.CTkLabel(self.MainUi,
+        MainPageTitle = customtkinter.CTkLabel(self.HomUiFrame,
                                                text="Home Page",
                                                text_color="#000000",
                                                font=("Helvetica", 20, "bold"))
         
 
 
-        MainPageTitle.place(x=525,y=20)
-
+        MainPageTitle.place(x=300,y=20)
 
 
 
@@ -749,7 +1020,8 @@ class MarketUi:
                                                     height=40,
                                                     anchor="w",
                                                     image=customtkinter.CTkImage(light_image=homeICO, size=(32,32)),
-                                                    compound="left"
+                                                    compound="left",
+                                                    command=self.EVENT_LOADHOME
                                                     )
         LFrameMainPButton.place(x=15,y=120)
         
@@ -832,7 +1104,8 @@ class MarketUi:
                                                     height=40,
                                                     anchor="w",
                                                     image=customtkinter.CTkImage(light_image=shopICO, size=(32,32)),
-                                                    compound="left"
+                                                    compound="left",
+                                                    command=self.EVENT_LOADSHOP
                                                     )
 
         LFrameShopButton.place(x=15,y=450)   
