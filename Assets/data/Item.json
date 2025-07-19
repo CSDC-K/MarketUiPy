@@ -1,0 +1,14 @@
+{
+    "Water":{
+        "Price" : 10
+    },
+    "Nutella":{
+        "Price" : 120
+    },
+    "Cola" : {
+        "Price" : 60
+    },
+    "A" : {
+        "Price" : 10
+    }
+}
