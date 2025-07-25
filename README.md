@@ -3,7 +3,7 @@
   <img src="https://img.icons8.com/emoji/96/shopping-cart-emoji.png" width="80"/>
   <h1>MarketUiPy 🛒</h1>
   <p><strong>💻 GUI-based Python Market Management System</strong></p>
-  <sub>Built with CustomTkinter + CTkListbox + PIL</sub>
+  <sub>Built with CustomTkinter</sub>
 </div>
 
 ---
